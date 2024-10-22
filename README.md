@@ -4,4 +4,4 @@
 
 Задание 1. Refactoring & MultiThreading.
 
-Задание 2. Handlers* (задача со звёздочкой).
+Задание 2. Handlers* (задача со звёздочкой) в ветке feature/handlers.
