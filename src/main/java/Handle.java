@@ -9,21 +9,18 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class Handle implements Runnable {
-
-    private final BufferedReader in;
-    private final BufferedOutputStream out;
-
+    private final Socket socket;
     final List<String> validPaths = List.of("/index.html", "/spring.svg", "/spring.png", "/resources.html",
             "/styles.css", "/app.js", "/links.html", "/forms.html", "/classic.html", "/events.html", "/events.js");
 
     public Handle(Socket socket) throws IOException {
-        this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        this.out = new BufferedOutputStream(socket.getOutputStream());
+        this.socket = socket;
     }
 
     @Override
     public void run() {
-        try {
+        try (final var in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             final var out = new BufferedOutputStream(socket.getOutputStream())) {
             while (true) {
                 // read only request line for simplicity
                 // must be in form GET /path HTTP/1.1
