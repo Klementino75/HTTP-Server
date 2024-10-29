@@ -24,11 +24,11 @@ public class ClientHandler implements Runnable {
         try (final var in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              final var out = new BufferedOutputStream(socket.getOutputStream())) {
             while (true) {
-                Request request = createRequest(in, out);
-                Handler handler = Server.getHandlers().get(request.getMethod()).get(request.getPath());
+                var request = createRequest(in, out);
+                var handler = Server.getHandlers().get(request.getMethod()).get(request.getPath());
                 System.out.println(handler);
                 if (handler == null) {
-                    Path parent = Path.of(request.getPath()).getParent();
+                    var parent = Path.of(request.getPath()).getParent();
                     handler = Server.getHandlers().get(request.getMethod()).get(parent.toString());
                     if (handler == null) {
                         error404NotFound(out);
