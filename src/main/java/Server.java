@@ -5,15 +5,15 @@ import java.util.concurrent.Executors;
 
 public class Server {
     final int CONNECTIONS = 64;
-    ExecutorService executorService = Executors.newFixedThreadPool(CONNECTIONS);
 
     public void listen(int port) {
-        try (final var serverSocket = new ServerSocket(port)) {
+        try (final var serverSocket = new ServerSocket(port);
+             var executorService = Executors.newFixedThreadPool(CONNECTIONS)) {
             while (true) {
                 final var socket = serverSocket.accept();
                 System.out.println(socket);
-                Handle handle = new Handle(socket);
-                executorService.submit(handle);
+                var handle = new Handle(socket);
+                executorService.execute(handle);
             }
         } catch (IOException e) {
             System.err.println(e.getMessage());
