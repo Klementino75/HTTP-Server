@@ -113,8 +113,13 @@ public class ClientHandler implements Runnable {
 //            }
         }
         var request = new Request(method, path, headers, body);
-        final URI uri = new URI(path);
-
+        URI uri = null;
+        try {
+            uri = new URI(path);
+        } catch (URISyntaxException e) {
+            System.err.println(e.getMessage());
+        }
+        assert uri != null;
         request.setQueryParams(URLEncodedUtils.parse(uri, StandardCharsets.UTF_8));
         System.out.println(request);
         System.out.println(request.getQueryParam("value"));
