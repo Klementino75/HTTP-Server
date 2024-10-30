@@ -1,5 +1,4 @@
 import org.apache.http.client.utils.URLEncodedUtils;
-
 import java.io.*;
 import java.util.Arrays;
 import java.util.List;
@@ -13,9 +12,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 
 public class ClientHandler implements Runnable {
-
     private final Socket socket;
-
     final static List<String> validPaths = List.of("/index.html", "/spring.svg", "/spring.png", "/resources.html",
             "/styles.css", "/app.js", "/links.html", "/forms.html", "/classic.html", "/events.html", "/events.js");
 
@@ -28,10 +25,11 @@ public class ClientHandler implements Runnable {
         try (final var in = new BufferedInputStream(socket.getInputStream());
              final var out = new BufferedOutputStream(socket.getOutputStream())) {
             while (true) {
-                Request request = createRequest(in, out);
-                Handler handler = Server.getHandlers().get(request.getMethod()).get(request.getPath());
+                var request = createRequest(in, out);
+                assert request != null;
+                var handler = Server.getHandlers().get(request.getMethod()).get(request.getPath());
                 if (handler == null) {
-                    Path parent = Path.of(request.getPath()).getParent();
+                    var parent = Path.of(request.getPath()).getParent();
                     handler = Server.getHandlers().get(request.getMethod()).get(parent.toString());
                     if (handler == null) {
                         error404NotFound(out);
@@ -50,10 +48,10 @@ public class ClientHandler implements Runnable {
         // лимит на request line + заголовки
         final int limit = 4096;
         in.mark(limit);
-        final byte[] buffer = new byte[limit];
+        final var buffer = new byte[limit];
         final int read = in.read(buffer);
         // ищем request line
-        final byte[] requestLineDelimiter = new byte[]{'\r', '\n'};
+        final var requestLineDelimiter = new byte[]{'\r', '\n'};
         final int requestLineEnd = indexOf(buffer, requestLineDelimiter, 0, read);
 
         if (requestLineEnd == -1) {
@@ -62,22 +60,22 @@ public class ClientHandler implements Runnable {
         }
         // read only request line for simplicity
         // must be in form GET /path HTTP/1.1
-        final String[] requestLine = new String(Arrays.copyOf(buffer, requestLineEnd)).split(" ");
+        final var requestLine = new String(Arrays.copyOf(buffer, requestLineEnd)).split(" ");
 
         // читаем request line
         if (requestLine.length != 3) {
             error404NotFound(out);
             return null;
         }
-        final String method = requestLine[0];
-        final String path = requestLine[1];
+        final var method = requestLine[0];
+        final var path = requestLine[1];
 
         if (!requestLine[1].startsWith("/")) {
             error404NotFound(out);
             return null;
         }
         //ищем заголовки
-        final byte[] headersDelimiter = new byte[]{'\r', '\n', '\r', '\n'};
+        final var headersDelimiter = new byte[]{'\r', '\n', '\r', '\n'};
         final int headersStart = requestLineEnd + requestLineDelimiter.length;
         final int headersEnd = indexOf(buffer, headersDelimiter, headersStart, read);
 
@@ -89,7 +87,7 @@ public class ClientHandler implements Runnable {
         in.reset();
         // пропускаем requestLine
         in.skip(headersStart);
-        final byte[] headersBytes = in.readNBytes(headersEnd - headersStart);
+        final var headersBytes = in.readNBytes(headersEnd - headersStart);
         final List<String> headers = Arrays.asList(new String(headersBytes).split("\r\n"));
         //для GET тела нет
         String body = null;
@@ -101,7 +99,7 @@ public class ClientHandler implements Runnable {
 
             if (contentLength.isPresent()) {
                 final int length = Integer.parseInt(contentLength.get());
-                final byte[] bodyBytes = in.readNBytes(length);
+                final var bodyBytes = in.readNBytes(length);
                 body = new String(bodyBytes);
             }
             // вычитываем Content-Type, чтобы понять есть ли в body параметры
@@ -114,7 +112,7 @@ public class ClientHandler implements Runnable {
 //                }
 //            }
         }
-        Request request = new Request(method, path, headers, body);
+        var request = new Request(method, path, headers, body);
         final URI uri = new URI(path);
 
         request.setQueryParams(URLEncodedUtils.parse(uri, StandardCharsets.UTF_8));
@@ -147,10 +145,12 @@ public class ClientHandler implements Runnable {
 
     static void error404NotFound(BufferedOutputStream responseStream) throws IOException {
         responseStream.write((
-                "HTTP/1.1 404 Not Found\r\n" +
-                        "Content-Length: 0\r\n" +
-                        "Connection: close\r\n" +
-                        "\r\n"
+                """
+                        HTTP/1.1 404 Not Found\r
+                        Content-Length: 0\r
+                        Connection: close\r
+                        \r
+                        """
         ).getBytes());
     }
 
